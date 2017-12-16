@@ -11,7 +11,7 @@ PiBells is a node application that lets users play a piano mini game, causing yo
 * Ability to wire your decorations without damaging the pi
 * Ability to set up a domain and port forward to your raspberry pi (Optional)
 * Git
-* MySQL installed for logging. Default db, username, and password = `pibells`
+* MySQL installed for stats (so you can see if anyone has been using your app). Default db, username, and password = `pibells`
 
 
 ## Install a Santa
