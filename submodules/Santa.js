@@ -20,12 +20,13 @@ const Santa = function( gpioPins, sqlOptions ){
 	this.io = require('socket.io')(this.server);
 	this.sql = require('./sql.js')(sqlOptions);
 	this.elves = [];
+	this.idle = false;
+	this.idle_timer = false;
+	
 
 	// Adds a self-elf to simplify the GPIO pin randomizer
 	if( !Conf.nogpio )
 		this.elves.push( new Elf( gpioPins, false, this ) );
-
-	
 
 	// Setup DB
 	this.sql.createTable().then(function(){
@@ -46,7 +47,7 @@ const Santa = function( gpioPins, sqlOptions ){
 
 
 	
-	// Log data, requires enableSqlLogging
+	// Log data
 	this.log = {
 		quests : 0,						// Quests completed since last log push
 		notes : 0,						// Notes played since last log push
@@ -58,6 +59,12 @@ const Santa = function( gpioPins, sqlOptions ){
 	// Initialize
 	this.init = function( ){
 		
+		setInterval(function(){
+			th.onIdle();
+		}, 500);
+
+		this.resetIdle();
+
 		if( !Conf.nosocket ){
 
 			let io = this.io;
@@ -71,7 +78,7 @@ const Santa = function( gpioPins, sqlOptions ){
 				socket.on('note', function( data ){
 
 					for( let i=0; i<data.length; ++i )
-						th.flashSingle();
+						th.flashSingle(true);
 					
 					++th.log.notes;
 					th.onNotePlayed( +data.octave, +data.key );
@@ -217,13 +224,19 @@ const Santa = function( gpioPins, sqlOptions ){
 	// Lamp functionality
 	this.flashAll = function(){
 
+		this.resetIdle();
+
 		let lamps = this.getLamps();
 		for( let lamp of lamps )
 			lamp.twinkle();
 
 	};
 
-	this.flashSingle = function(){
+	// isActive denotes if it was a key hit. otherwise it's from the auto idle flash
+	this.flashSingle = function( isActive ){
+
+		if( isActive )
+			this.resetIdle();
 
 		let lamps = this.getLamps();
 		lamps.sort(function( a, b ){
@@ -254,6 +267,26 @@ const Santa = function( gpioPins, sqlOptions ){
 
 	};
 
+	// Resets the idle timer
+	this.resetIdle = function(){
+
+		this.idle = false;
+		clearTimeout(this.idle_timer);
+		if( Conf.idle_timeout > 0 )
+			this.idle_timer = setTimeout(function(){
+				th.idle = true;
+			}, Conf.idle_timeout*1000);
+			
+	};
+
+	this.onIdle = function(){
+
+		if( !this.idle )
+			return;
+		
+		this.flashSingle();
+
+	};
 
 	// NETSCAN
 

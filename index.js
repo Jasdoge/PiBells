@@ -5,6 +5,7 @@ const Conf = {
 	nosocket : false,		// SANTA ONLY: Do not accept socket connections. Allows you to host only the website on this device if you wish. Default false
 	nogpio : false,			// SANTA ONLY: Do not use the GPIOs on the santa device
 	port : 8080,
+	idle_timeout : 30,		// Seconds before the lamps start to flash idly. Any value <= 0 will block it
 };
 
 // Submodules
